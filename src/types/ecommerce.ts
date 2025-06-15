@@ -12,6 +12,12 @@ export interface User {
   password?: string; // Not in schema but likely for creation
 }
 
+export interface Media {
+  url: string;
+  type: 'image' | 'video';
+  alt?: string;
+}
+
 export interface Product {
   id: string; // uuid
   name: string;
@@ -19,7 +25,7 @@ export interface Product {
   price: number;
   categoryId: string; // uuid
   brandId?: string; // uuid
-  images: string[]; // uris
+  imageUrl: string; // uri
   inStock: boolean;
   sku?: string;
   compareAtPrice?: number;

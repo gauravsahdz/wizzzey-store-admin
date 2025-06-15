@@ -11,8 +11,8 @@ interface AppLogoProps {
 const AppLogo: React.FC<AppLogoProps> = ({ width = 40, height = 40, className }) => {
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <Store className="text-primary" style={{ width, height }} aria-hidden="true" />
-       <span className="font-headline text-2xl font-bold text-primary hidden md:inline">Wizzzey</span>
+      <Store className="text-white" style={{ width, height }} aria-hidden="true" />
+       <span className="font-headline text-2xl font-bold text-white hidden md:inline">Wizzzey</span>
     </div>
   );
 };

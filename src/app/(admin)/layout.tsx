@@ -120,7 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen bg-background">
+      <div className="w-full flex min-h-screen bg-background">
         <Sidebar collapsible="icon">
           <SidebarHeader className="p-4 border-b border-sidebar-border">
             <Link href="/dashboard">

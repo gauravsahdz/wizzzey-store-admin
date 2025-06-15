@@ -1,7 +1,7 @@
 
 "use client";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Product } from "@/types/ecommerce";
+import type { Media, Product } from "@/types/ecommerce";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,7 +14,7 @@ interface ProductColumnsProps {
   onDeleteRequested: (productId: string) => void; 
 }
 
-const API_HOST = 'http://localhost:3000'; // Define the base host for images
+const API_HOST = process.env.NEXT_PUBLIC_API_URL;
 
 export const ProductColumns = ({ onDeleteRequested }: ProductColumnsProps): ColumnDef<Product>[] => {
   
@@ -39,23 +39,26 @@ export const ProductColumns = ({ onDeleteRequested }: ProductColumnsProps): Colu
     enableHiding: false,
   },
   {
-    accessorKey: "images",
+    accessorKey: "media",
     header: "Image",
     cell: ({ row }) => {
-      const images = row.getValue("images") as string[] | undefined;
+      const images = row.getValue("media") as Media[] | undefined;
+      console.log('Log: images: ', images);
       const placeholderImage = "https://placehold.co/60x60.png";
       let displayImage = placeholderImage;
 
       if (images && images.length > 0 && images[0]) {
-        const imagePath = images[0];
+        const imagePath = images[0].url;
         if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
           displayImage = imagePath;
+          console.log('Log: display images: ', displayImage);
         } else {
           let path = imagePath.replace(/\\/g, '/'); // Convert backslashes to forward slashes
           if (path.startsWith('/')) {
             path = path.substring(1); // Remove leading slash if present
           }
           displayImage = `${API_HOST}/${path}`;
+          console.log('Log: display images: ', displayImage);
         }
       }
       

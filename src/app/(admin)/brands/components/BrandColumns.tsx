@@ -14,7 +14,7 @@ interface BrandColumnsProps {
   onDeleteRequested: (brandId: string) => void; 
 }
 
-const API_HOST = 'http://localhost:3000'; // Define the base host for images
+const API_HOST = process.env.NEXT_PUBLIC_API_URL;
 
 export const BrandColumns = ({ onDeleteRequested }: BrandColumnsProps): ColumnDef<Brand>[] => {
   

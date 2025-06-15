@@ -23,7 +23,7 @@ import type {
 } from '@/types/ecommerce';
 import { MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_DISCOUNTS, MOCK_BLOG_POSTS, MOCK_ACTIVITY_LOGS, MOCK_APP_SETTINGS } from '@/lib/mockData'; 
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/api';
 
 // Helper function to simulate API delay - can be removed for real API
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
