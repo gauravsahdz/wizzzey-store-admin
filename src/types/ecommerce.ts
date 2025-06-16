@@ -2,7 +2,7 @@
 // Based on OpenAPI specification components.schemas
 
 export interface User {
-  id: string; // uuid
+  _id: string; // uuid
   name: string;
   email: string; // email
   role: 'Admin' | 'User';
