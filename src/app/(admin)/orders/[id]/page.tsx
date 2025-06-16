@@ -1,0 +1,215 @@
+'use client';
+
+import { useParams } from 'next/navigation';
+import PageHeader from '@/components/PageHeader';
+import { useOrder } from '@/hooks/use-orders';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { OrderStatus } from '@/types/order';
+import BackButton from '@/components/BackButton';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+
+const statusColors: Record<OrderStatus, string> = {
+  Pending: 'bg-yellow-100 text-yellow-800',
+  Processing: 'bg-blue-100 text-blue-800',
+  Shipped: 'bg-purple-100 text-purple-800',
+  Delivered: 'bg-green-100 text-green-800',
+  Cancelled: 'bg-red-100 text-red-800',
+  Refunded: 'bg-gray-100 text-gray-800',
+};
+
+export default function OrderDetailsPage() {
+  const params = useParams();
+  const { data, isLoading, error } = useOrder(params.id as string);
+  const { toast } = useToast();
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-6">
+        <BackButton href="/orders" />
+        <div className="mt-4 text-center text-red-500">
+          Error loading order details. Please try again later.
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <BackButton href="/orders" />
+        <div className="mt-6 space-y-6">
+          <Skeleton className="h-8 w-[200px]" />
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-[200px]" />
+            <Skeleton className="h-[200px]" />
+          </div>
+          <Skeleton className="h-[300px]" />
+        </div>
+      </div>
+    );
+  }
+
+  const order = data?.data.order;
+
+  if (!order) {
+    return (
+      <div className="container mx-auto py-6">
+        <BackButton href="/orders" />
+        <div className="mt-4 text-center text-muted-foreground">
+          Order not found.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-6">
+      <div className="mb-6 flex items-center justify-between">
+        <BackButton href="/orders" />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              // TODO: Implement print functionality
+              toast({
+                title: 'Coming soon',
+                description: 'Print functionality will be available soon.',
+              });
+            }}
+          >
+            Print Order
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              // TODO: Implement export functionality
+              toast({
+                title: 'Coming soon',
+                description: 'Export functionality will be available soon.',
+              });
+            }}
+          >
+            Export
+          </Button>
+        </div>
+      </div>
+
+      <PageHeader
+        title={`Order #${order.id}`}
+        description={`Placed on ${formatDate(order.createdAt)}`}
+      />
+
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div>
+              <span className="font-medium">Name:</span>{' '}
+              {order.customerInfo.name}
+            </div>
+            <div>
+              <span className="font-medium">Email:</span>{' '}
+              {order.customerInfo.email}
+            </div>
+            {order.customerInfo.phone && (
+              <div>
+                <span className="font-medium">Phone:</span>{' '}
+                {order.customerInfo.phone}
+              </div>
+            )}
+            <div>
+              <span className="font-medium">Shipping Address:</span>{' '}
+              {order.customerInfo.shippingAddress}
+            </div>
+            {order.customerInfo.billingAddress && (
+              <div>
+                <span className="font-medium">Billing Address:</span>{' '}
+                {order.customerInfo.billingAddress}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div>
+              <span className="font-medium">Status:</span>{' '}
+              <Badge
+                className={statusColors[order.status]}
+                variant="secondary"
+              >
+                {order.status}
+              </Badge>
+            </div>
+            <div>
+              <span className="font-medium">Order Date:</span>{' '}
+              {formatDate(order.createdAt)}
+            </div>
+            <div>
+              <span className="font-medium">Last Updated:</span>{' '}
+              {formatDate(order.updatedAt)}
+            </div>
+            <div>
+              <span className="font-medium">Total Amount:</span>{' '}
+              {formatCurrency(order.totalAmount)}
+            </div>
+            {order.notes && (
+              <div>
+                <span className="font-medium">Notes:</span>{' '}
+                {order.notes}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Order Items</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y">
+            {order.items.map((item, index) => (
+              <div
+                key={`${item.productId}-${index}`}
+                className="flex items-center justify-between py-4"
+              >
+                <div className="space-y-1">
+                  <div className="font-medium">{item.productName}</div>
+                  {item.selectedSize && (
+                    <div className="text-sm text-muted-foreground">
+                      Size: {item.selectedSize}
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="font-medium">
+                    {formatCurrency(item.price * item.quantity)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {item.quantity} × {formatCurrency(item.price)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 border-t pt-4">
+            <div className="flex justify-between font-medium">
+              <span>Total</span>
+              <span>{formatCurrency(order.totalAmount)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+} 
