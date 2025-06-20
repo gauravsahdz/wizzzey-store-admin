@@ -1,4 +1,3 @@
-
 "use client";
 import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +11,7 @@ import { getDashboardStats, getActivityLogs as fetchActivityLogs } from '@/lib/a
 import type { ActivityLog, DashboardStatsData } from '@/types/ecommerce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
@@ -115,13 +115,13 @@ export default function DashboardPage() {
             title="Today's Orders" 
             value={dashboardData?.todayStats?.orders?.toString() ?? "0"} 
             icon={PackageCheck} 
-            description={`${dashboardData?.todayStats?.revenue?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) ?? "$0.00"} today`}
+            description={`${dashboardData?.todayStats?.revenue !== undefined ? formatCurrency(dashboardData.todayStats.revenue) : "₹0.00"} today`}
             onClick={handleTodaysOrdersClick} 
             isLoading={isLoadingStats} 
         />
         <StatCard 
             title="Total Revenue" 
-            value={`${dashboardData?.overallStats?.totalRevenue?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) ?? "$0.00"}`} 
+            value={`${dashboardData?.overallStats?.totalRevenue !== undefined ? formatCurrency(dashboardData.overallStats.totalRevenue) : "₹0.00"}`} 
             icon={DollarSign} 
             description="All-time revenue" 
             href="/orders?filter=revenue" 

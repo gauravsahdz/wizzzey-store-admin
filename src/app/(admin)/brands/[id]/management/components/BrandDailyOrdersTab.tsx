@@ -1,8 +1,8 @@
-
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import type { BrandDailyOrderItem, SoftInventoryItem } from '@/types/ecommerce';
-import { getBrandDailyOrders, submitBrandOrdersToPlaced, getSoftInventoryItems } from '@/lib/apiService'; // Mocked
+import { submitBrandOrdersToPlaced, getSoftInventoryItems } from '@/lib/apiService';
+import { api } from '@/lib/api';
 import { DataTable } from '@/app/(admin)/products/components/data-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,13 +18,13 @@ interface BrandDailyOrdersTabProps {
 }
 
 // Helper function to check stock (mocked)
-const checkSoftStock = (sku: string, size: string, color: string | undefined, softInventory: SoftInventoryItem[]): boolean => {
-  const item = softInventory.find(
-    si => si.sku === sku && si.size === size && (color ? si.color?.toLowerCase() === color.toLowerCase() : true)
-  );
-  return item ? item.quantity > 0 : false; // True if in stock, false if out of stock or not found
-};
 
+
+// Fetch today's orders for a brand
+async function fetchTodayOrders(brandId: string) {
+  const response = await api.get(`/orders/today?brandId=${brandId}`);
+  return response.data;
+}
 
 export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOrdersTabProps) {
   const [dailyOrders, setDailyOrders] = useState<BrandDailyOrderItem[]>([]);
@@ -39,11 +39,12 @@ export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOr
     setIsLoading(true);
     try {
       const [ordersResponse, softInventoryResponse] = await Promise.all([
-        getBrandDailyOrders(brandId, today), // Mocked
-        getSoftInventoryItems(1, 500, { brandName: brandName }) // Fetch soft inventory for the brand, Mocked
+        fetchTodayOrders(brandId),
+        getSoftInventoryItems(1, 500, { brandName: brandName })
       ]);
 
       if (ordersResponse.type === 'OK' && ordersResponse.data?.orders) {
+        console.log('Log: order daily: ', ordersResponse.data.orders);
         setDailyOrders(ordersResponse.data.orders);
       } else {
         toast({ title: "Error", description: ordersResponse.message || "Failed to fetch daily orders.", variant: "destructive" });
@@ -73,96 +74,33 @@ export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOr
     {
       id: "select",
       header: ({ table }) => {
-        const isOutOfStockHeader = table.getFilteredRowModel().rows.some(row => !checkSoftStock(row.original.sku, row.original.size, row.original.color, softInventory));
-        if (!isOutOfStockHeader && table.getFilteredRowModel().rows.length > 0) return null; // Don't show header checkbox if no items are out of stock
-
         return (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
             onCheckedChange={(value) => {
-                // Select only out-of-stock items
-                const outOfStockRowIds = table.getFilteredRowModel().rows
-                    .filter(row => !checkSoftStock(row.original.sku, row.original.size, row.original.color, softInventory))
-                    .map(row => row.id);
-                
-                const newSelection: Record<string, boolean> = {};
-                if (value) {
-                    outOfStockRowIds.forEach(id => newSelection[id] = true);
-                }
-                table.setRowSelection(newSelection);
+               console.log('Log: value: ', value);
             }}
             aria-label="Select all out-of-stock orders"
-            disabled={!isOutOfStockHeader}
           />
         );
       },
-      cell: ({ row }) => {
-        const isInStock = checkSoftStock(row.original.sku, row.original.size, row.original.color, softInventory);
-        return (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-            disabled={isInStock} // Disable checkbox if stock is available
-          />
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
     },
     { accessorKey: "id", header: "Order ID" },
-    { accessorKey: "sku", header: "SKU" },
-    { accessorKey: "color", header: "Color", cell: ({row}) => row.original.color || "-" },
-    { accessorKey: "size", header: "Size" },
-    { accessorKey: "quantity", header: "Quantity" },
+    { accessorKey: "productName", header: "Product Name", cell: ({row}) => row.items.map(item => item.productName).join(', ') },
+    { accessorKey: "quantity", header: "Quantity", cell: ({row}) => row.items.map(item => item.quantity).join(', ') },
+    { accessorKey: "totalAmount", header: "Total Amount"},
     {
       accessorKey: "stockStatus",
       header: "Stock Status",
       cell: ({ row }) => {
-        const isInStock = checkSoftStock(row.original.sku, row.original.size, row.original.color, softInventory);
-        return <Badge variant={isInStock ? "default" : "destructive"}>{isInStock ? "In Stock" : "Out of Stock"}</Badge>;
+        return <Badge variant="default">In Stock</Badge>;
       }
     },
   ], [softInventory]);
 
 
   const handleSubmitSelected = async () => {
-    setIsSubmitting(true);
-    const selectedOrderIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
-    const ordersToSubmit = dailyOrders.filter(order => selectedOrderIds.includes(order.id));
-
-    if (ordersToSubmit.length === 0) {
-      toast({ title: "No Orders Selected", description: "Please select out-of-stock orders to submit.", variant: "default" });
-      setIsSubmitting(false);
-      return;
-    }
-    
-    // Further filter to ensure only truly out-of-stock items are submitted (client-side re-check)
-    const actualOutOfStockOrders = ordersToSubmit.filter(order => !checkSoftStock(order.sku, order.size, order.color, softInventory));
-    
-    if (actualOutOfStockOrders.length === 0) {
-         toast({ title: "No Out-of-Stock Orders", description: "All selected orders appear to be in stock. No action taken.", variant: "default" });
-         setIsSubmitting(false);
-         setRowSelection({});
-         return;
-    }
-
-
-    try {
-      const response = await submitBrandOrdersToPlaced(brandId, actualOutOfStockOrders.map(o => o.id)); // Mocked API
-      if (response.type === 'OK') {
-        toast({ title: "Success", description: `${actualOutOfStockOrders.length} orders submitted to 'Order Placed'.` });
-        setRowSelection({});
-        fetchData(); // Refresh daily orders list
-        // Potentially trigger refresh of OrderPlacedTab if it's a sibling component via context or prop drilling
-      } else {
-        toast({ title: "Error", description: response.message || "Failed to submit orders.", variant: "destructive" });
-      }
-    } catch (error) {
-      toast({ title: "Error", description: "An error occurred during submission.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
+   console.log('Log: rowSelection: ', rowSelection);
   };
 
   const selectedRowCount = Object.values(rowSelection).filter(Boolean).length;
@@ -194,10 +132,10 @@ export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOr
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
           // Pagination not implemented for this mocked table for brevity
-          pagination={{ pageIndex: 0, pageSize: dailyOrders.length || 10, pageCount: 1}}
+          pagination={{ pageIndex: 0, pageSize: dailyOrders.length || 10 }}
           setPagination={() => {}} // No-op for now
-          filterColumn="sku"
-          filterPlaceholder="Filter by SKU..."
+          filterColumn="productName"
+          filterPlaceholder="Filter by Product Name..."
         />
       </CardContent>
     </Card>

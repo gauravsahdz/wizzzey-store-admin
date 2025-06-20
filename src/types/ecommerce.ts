@@ -284,10 +284,11 @@ export interface SoftInventoryItem {
 
 export interface BrandDailyOrderItem {
   id: string; // This is the Order ID
-  sku: string;
-  color?: string;
-  size: string;
-  quantity: number;
+  items: {
+    productName: string;
+    quantity: number;
+  }[];
+  totalAmount: number;
   rawOrderData?: OrderItem; 
 }
 
