@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import PageHeader from '@/components/PageHeader';
 import CategoryForm from '../../components/CategoryForm';
 import { getCategoryById } from '@/lib/apiService';
@@ -10,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import BackButton from '@/components/BackButton';
 
-export default function EditCategoryPage({ params }: { params: { id: string } }) {
+export default function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [category, setCategory] = useState<Category | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -19,9 +19,9 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
     const fetchCategory = async () => {
       setIsLoading(true);
       try {
-        const response = await getCategoryById(params.id);
-        if (response.type === "OK" && response.data?.category) {
-          setCategory(response.data.category);
+        const response = await getCategoryById(id);
+        if (response.type === "OK" && response.data?.categories && response.data.categories.length > 0) {
+          setCategory(response.data.categories[0]);
         } else {
           toast({ title: "Error", description: response.message || "Failed to fetch category details.", variant: "destructive" });
         }
@@ -31,10 +31,10 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
         setIsLoading(false);
       }
     };
-    if (params.id) {
+    if (id) {
       fetchCategory();
     }
-  }, [params.id, toast]);
+  }, [id, toast]);
 
   if (isLoading) {
     return (

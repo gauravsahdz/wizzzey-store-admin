@@ -1,21 +1,23 @@
-
 "use client";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileDown, RefreshCw } from 'lucide-react'; // Added RefreshCw
+import { PlusCircle, FileDown, RefreshCw, Link as LinkIcon } from 'lucide-react'; // Added LinkIcon
 import { Product } from '@/types/ecommerce';
 import { getProducts, deleteProduct } from '@/lib/apiService';
 import { ProductColumns } from './components/ProductColumns';
 import { DataTable } from './components/data-table'; 
 import { useToast } from '@/hooks/use-toast';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { RowSelectionState } from '@tanstack/react-table';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10, pageCount:1 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [pageCount, setPageCount] = useState(1);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const { toast } = useToast();
   const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
@@ -27,10 +29,7 @@ export default function ProductsPage() {
       if (response.type === 'OK' && response.data?.products) {
         setProducts(response.data.products);
         if (response.pagination) {
-            setPagination(prev => ({
-                ...prev,
-                pageCount: response.pagination!.totalPages,
-            }));
+            setPageCount(response.pagination.totalPages);
         }
       } else {
         toast({ title: "Error", description: response.message || "Failed to fetch products.", variant: "destructive" });
@@ -72,6 +71,36 @@ export default function ProductsPage() {
     }
   };
 
+  const handleCreateGroupedUrl = () => {
+    const selectedProductIds = Object.keys(rowSelection).map(rowIndex => {
+      const product = products[parseInt(rowIndex)];
+      return product?.id;
+    }).filter(Boolean);
+    if (selectedProductIds.length === 0) {
+      toast({ title: "No Selection", description: "Please select at least one product.", variant: "destructive" });
+      return;
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_STORE_URL;
+    const groupedUrl = `${baseUrl}/shop?products_ids=[${selectedProductIds.join(', ')}]`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(groupedUrl).then(() => {
+      toast({ 
+        title: "URL Copied", 
+        description: `Grouped URL copied to clipboard: ${groupedUrl}` 
+      });
+    }).catch(() => {
+      // Fallback if clipboard API fails
+      toast({ 
+        title: "URL Generated", 
+        description: `Grouped URL: ${groupedUrl}` 
+      });
+    });
+  };
+
+  const selectedCount = Object.keys(rowSelection).length;
+
   return (
     <>
       <PageHeader
@@ -79,6 +108,16 @@ export default function ProductsPage() {
         description="Manage all products in your store."
         actions={
           <div className="flex gap-2">
+            {selectedCount > 0 && (
+              <Button 
+                variant="outline" 
+                onClick={handleCreateGroupedUrl}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Create Grouped URL ({selectedCount})
+              </Button>
+            )}
             <Button variant="outline" onClick={fetchData} disabled={isLoading}>
               <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
@@ -102,8 +141,12 @@ export default function ProductsPage() {
         isLoading={isLoading}
         pagination={pagination}
         setPagination={setPagination}
+        pageCount={pageCount}
         filterColumn='name'
         filterPlaceholder='Filter products by name...'
+        rowSelection={rowSelection}
+        setRowSelection={setRowSelection}
+        enableRowSelection={true}
       />
       <ConfirmationDialog
         isOpen={isConfirmDeleteDialogOpen}

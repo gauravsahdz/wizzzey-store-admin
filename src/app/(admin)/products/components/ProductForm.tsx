@@ -209,9 +209,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       if (media.length > 0) media.forEach(m => formData.append("media", JSON.stringify(m)));
       // API call
       let response;
+      console.log("values", values);
       if (initialData) {
-        response = await updateProduct(initialData.id, formData);
+        console.log("initialData", initialData);
+        response = await updateProduct(initialData.id, values);
       } else {
+        console.log("creating product");
         response = await createProduct(formData);
       }
       if (response.type === "OK") {

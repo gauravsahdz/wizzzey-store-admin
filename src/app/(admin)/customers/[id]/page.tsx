@@ -1,7 +1,7 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useUser } from '@/hooks/use-users';
+import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +10,26 @@ import { formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import BackButton from '@/components/BackButton';
 
-export default function CustomerDetailsPage() {
-  const params = useParams();
+export default function CustomerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const { toast } = useToast();
-  const customerId = params.id as string;
+  const customerId = id as string;
 
-  const { data: customerData, isLoading, error } = useUser(customerId);
+  // TODO: Replace with actual customer hook when available
+  const isLoading = false;
+  const error = null;
+  const customer = {
+    id: customerId,
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1-555-123-4567',
+    createdAt: new Date().toISOString(),
+  };
 
   if (isLoading) {
     return (
@@ -32,8 +44,8 @@ export default function CustomerDetailsPage() {
       </div>
     );
   }
-console.log({customerData, error});
-  if (error || !customerData?.data.users[0]) {
+
+  if (error || !customer) {
     return (
       <div className="container mx-auto py-6">
         <PageHeader
@@ -46,8 +58,6 @@ console.log({customerData, error});
       </div>
     );
   }
-
-  const customer = customerData.data.users[0];
 
   return (
     <>
@@ -73,14 +83,14 @@ console.log({customerData, error});
               <div className="flex items-center space-x-4">
                 <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-2xl font-semibold text-primary">
-                    {customer.name.charAt(0).toUpperCase()}
+                    {customer.firstName.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">{customer.name}</h3>
+                  <h3 className="text-lg font-semibold">{`${customer.firstName} ${customer.lastName}`}</h3>
                   <p className="text-sm text-muted-foreground">{customer.email}</p>
                   <Badge variant="outline" className="mt-2">
-                    {customer.role}
+                    Customer
                   </Badge>
                 </div>
               </div>
@@ -106,12 +116,6 @@ console.log({customerData, error});
                   <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>Joined {formatDate(customer.createdAt)}</span>
                 </div>
-                {customer.address && (
-                  <div className="flex items-center text-sm">
-                    <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{customer.address}</span>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

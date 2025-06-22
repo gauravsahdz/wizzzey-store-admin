@@ -90,7 +90,7 @@ export const ProductColumns = ({ onDeleteRequested }: ProductColumnsProps): Colu
       const amount = parseFloat(row.getValue("price") as string);
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
       }).format(amount);
       return <div className="font-medium">{formatted}</div>;
     },

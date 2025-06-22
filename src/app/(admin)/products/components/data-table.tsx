@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -33,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   isLoading?: boolean;
   pagination: PaginationState;
   setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+  pageCount?: number;
   filterColumn?: string;
   filterPlaceholder?: string;
   rowSelection?: RowSelectionState; // Optional: for controlled row selection
@@ -46,6 +46,7 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   pagination,
   setPagination,
+  pageCount = 1,
   filterColumn,
   filterPlaceholder,
   rowSelection: controlledRowSelection, // Renamed to avoid conflict
@@ -72,7 +73,7 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onPaginationChange: setPagination,
     manualPagination: true,
-    pageCount: pagination.pageCount,
+    pageCount: pageCount,
     onRowSelectionChange: setRowSelection, // Enable row selection
     enableRowSelection: enableRowSelection, // Conditionally enable selection
     state: {

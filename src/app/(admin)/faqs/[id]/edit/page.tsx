@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import PageHeader from '@/components/PageHeader';
 import FaqForm from '../../components/FaqForm';
 import { getFaqById } from '@/lib/apiService';
@@ -10,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import BackButton from '@/components/BackButton';
 
-export default function EditFaqPage({ params }: { params: { id: string } }) {
+export default function EditFaqPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [faq, setFaq] = useState<FAQ | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -19,7 +19,7 @@ export default function EditFaqPage({ params }: { params: { id: string } }) {
     const fetchFaq = async () => {
       setIsLoading(true);
       try {
-        const response = await getFaqById(params.id);
+        const response = await getFaqById(id);
         if (response.type === "OK" && response.data?.faq) {
           setFaq(response.data.faq);
         } else {
@@ -31,10 +31,10 @@ export default function EditFaqPage({ params }: { params: { id: string } }) {
         setIsLoading(false);
       }
     };
-    if (params.id) {
+    if (id) {
       fetchFaq();
     }
-  }, [params.id, toast]);
+  }, [id, toast]);
 
   if (isLoading) {
     return (

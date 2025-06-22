@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { use } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { useOrder } from '@/hooks/use-orders';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,15 +21,15 @@ const statusColors: Record<OrderStatus, string> = {
   Refunded: 'bg-gray-100 text-gray-800',
 };
 
-export default function OrderDetailsPage() {
-  const params = useParams();
-  const { data, isLoading, error } = useOrder(params.id as string);
+export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data, isLoading, error } = useOrder(id as string);
   const { toast } = useToast();
 
   if (error) {
     return (
       <div className="container mx-auto py-6">
-        <BackButton href="/orders" />
+        <BackButton defaultHref="/orders" />
         <div className="mt-4 text-center text-red-500">
           Error loading order details. Please try again later.
         </div>
@@ -40,7 +40,7 @@ export default function OrderDetailsPage() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-6">
-        <BackButton href="/orders" />
+        <BackButton defaultHref="/orders" />
         <div className="mt-6 space-y-6">
           <Skeleton className="h-8 w-[200px]" />
           <div className="grid gap-6 md:grid-cols-2">
@@ -58,7 +58,7 @@ export default function OrderDetailsPage() {
   if (!order) {
     return (
       <div className="container mx-auto py-6">
-        <BackButton href="/orders" />
+        <BackButton defaultHref="/orders" />
         <div className="mt-4 text-center text-muted-foreground">
           Order not found.
         </div>
@@ -69,7 +69,7 @@ export default function OrderDetailsPage() {
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
-        <BackButton href="/orders" />
+        <BackButton defaultHref="/orders" />
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

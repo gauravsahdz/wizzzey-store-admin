@@ -1,7 +1,6 @@
 "use client";
 
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +9,10 @@ import { getBrandById, updateBrand } from '@/lib/apiService';
 import { useToast } from '@/hooks/use-toast';
 import BrandForm from '../../components/BrandForm';
 import BackButton from '@/components/BackButton';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function EditBrandPage() {
-  const params = useParams();
-  const id = params.id as string;
+export default function EditBrandPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [brand, setBrand] = useState<Brand | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();

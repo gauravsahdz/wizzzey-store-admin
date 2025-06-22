@@ -1,8 +1,8 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/PageHeader';
 import BackButton from '@/components/BackButton';
 import { Brand } from '@/types/ecommerce';
@@ -13,9 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BrandDailyOrdersTab from './components/BrandDailyOrdersTab';
 import BrandOrderPlacedTab from './components/BrandOrderPlacedTab';
 
-export default function BrandManagementPage() {
-  const params = useParams();
-  const brandId = params.id as string;
+export default function BrandManagementPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const brandId = id as string;
   const [brand, setBrand] = useState<Brand | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
