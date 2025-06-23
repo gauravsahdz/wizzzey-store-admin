@@ -45,6 +45,7 @@ export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOr
 
       if (ordersResponse.type === 'OK' && ordersResponse.data?.orders) {
         console.log('Log: order daily: ', ordersResponse.data.orders);
+        
         setDailyOrders(ordersResponse.data.orders);
       } else {
         toast({ title: "Error", description: ordersResponse.message || "Failed to fetch daily orders.", variant: "destructive" });
@@ -86,8 +87,8 @@ export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOr
       },
     },
     { accessorKey: "id", header: "Order ID" },
-    { accessorKey: "productName", header: "Product Name", cell: ({row}) => row.items.map(item => item.productName).join(', ') },
-    { accessorKey: "quantity", header: "Quantity", cell: ({row}) => row.items.map(item => item.quantity).join(', ') },
+    { accessorKey: "productName", header: "Product Name", cell: ({row}) => row.original.items.map(item => item.productName).join(', ') },
+    { accessorKey: "quantity", header: "Quantity", cell: ({row}) => row.original.items.map(item => item.quantity).join(', ') },
     { accessorKey: "totalAmount", header: "Total Amount"},
     {
       accessorKey: "stockStatus",
@@ -131,7 +132,6 @@ export default function BrandDailyOrdersTab({ brandId, brandName }: BrandDailyOr
           isLoading={isLoading}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
-          // Pagination not implemented for this mocked table for brevity
           pagination={{ pageIndex: 0, pageSize: dailyOrders.length || 10 }}
           setPagination={() => {}} // No-op for now
           filterColumn="productName"
