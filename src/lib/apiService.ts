@@ -1,4 +1,3 @@
-
 // This is an API service that makes actual HTTP requests.
 import type {
   Product,
@@ -356,10 +355,23 @@ export const deleteUser = async (id: string): Promise<ApiResponse> => {
 };
 
 
-// Order API functions - Mocked, OpenAPI has no /orders endpoint
+// Order API functions
 export const getOrders = async (page = 1, limit = 10, filters = {}): Promise<PaginatedResponse<Order, 'orders'>> => {
   await delay(300);
   return { type: 'OK', data: { orders: MOCK_ORDERS }, pagination: {total: MOCK_ORDERS.length, page, limit, totalPages: Math.ceil(MOCK_ORDERS.length/limit), hasNextPage: (page * limit < MOCK_ORDERS.length) , hasPrevPage: page > 1} };
+};
+
+export const updateOrder = async (id: string, orderData: Partial<Order>): Promise<ApiResponse> => {
+  return fetchApi<ApiResponse>(`orders/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(orderData),
+  });
+};
+
+export const deleteOrder = async (id: string): Promise<ApiResponse> => {
+  return fetchApi<ApiResponse>(`orders/${id}`, {
+    method: 'DELETE',
+  });
 };
 
 // Customer API functions - Mocked, OpenAPI has no /customers endpoint

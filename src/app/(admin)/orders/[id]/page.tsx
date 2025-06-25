@@ -11,6 +11,13 @@ import { OrderStatus } from '@/types/order';
 import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { updateOrder, deleteOrder } from '@/lib/apiService';
+import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from 'react';
 
 const statusColors: Record<OrderStatus, string> = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -23,8 +30,18 @@ const statusColors: Record<OrderStatus, string> = {
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data, isLoading, error } = useOrder(id as string);
+  const { data, isLoading, error, refetch } = useOrder(id as string);
   const { toast } = useToast();
+  const router = useRouter();
+
+  // Edit dialog state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editStatus, setEditStatus] = useState<string>('');
+  const [editNotes, setEditNotes] = useState<string>('');
+  // Delete dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   if (error) {
     return (
@@ -66,15 +83,47 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     );
   }
 
+  // Handlers
+  const handleEditOpen = () => {
+    setEditStatus(order.status);
+    setEditNotes(order.notes || '');
+    setEditOpen(true);
+  };
+  const handleEditSave = async () => {
+    setUpdating(true);
+    const res = await updateOrder(order.id, { status: editStatus, notes: editNotes });
+    setUpdating(false);
+    if (res.type === 'OK') {
+      toast({ title: 'Order updated', description: 'Order updated successfully.' });
+      setEditOpen(false);
+      refetch && refetch();
+    } else {
+      toast({ title: 'Error', description: res.message || 'Failed to update order.', variant: 'destructive' });
+    }
+  };
+  const handleDelete = async () => {
+    setDeleting(true);
+    const res = await deleteOrder(order.id);
+    setDeleting(false);
+    if (res.type === 'OK') {
+      toast({ title: 'Order deleted', description: 'Order deleted successfully.' });
+      setDeleteOpen(false);
+      router.push('/orders');
+    } else {
+      toast({ title: 'Error', description: res.message || 'Failed to delete order.', variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6 flex items-center justify-between">
         <BackButton defaultHref="/orders" />
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleEditOpen}>Edit</Button>
+          <Button variant="destructive" onClick={() => setDeleteOpen(true)}>Delete</Button>
           <Button
             variant="outline"
             onClick={() => {
-              // TODO: Implement print functionality
               toast({
                 title: 'Coming soon',
                 description: 'Print functionality will be available soon.',
@@ -86,7 +135,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
           <Button
             variant="outline"
             onClick={() => {
-              // TODO: Implement export functionality
               toast({
                 title: 'Coming soon',
                 description: 'Export functionality will be available soon.',
@@ -97,6 +145,51 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
           </Button>
         </div>
       </div>
+
+      {/* Edit Order Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <label className="block text-sm font-medium">Status</label>
+            <Select value={editStatus} onValueChange={setEditStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Processing">Processing</SelectItem>
+                <SelectItem value="Shipped">Shipped</SelectItem>
+                <SelectItem value="Delivered">Delivered</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+                <SelectItem value="Refunded">Refunded</SelectItem>
+              </SelectContent>
+            </Select>
+            <label className="block text-sm font-medium">Notes</label>
+            <Textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={updating}>Cancel</Button>
+            <Button onClick={handleEditSave} loading={updating}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Order</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete this order? This action cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} loading={deleting}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <PageHeader
         title={`Order #${order.id}`}
